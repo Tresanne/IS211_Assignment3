@@ -1,8 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"Assignment 3"
+
 import re
 import sys
 import csv
 import urllib2
 import argparse
+from datetime import datetime
+from operator import itemgetter
+
+
+def process_time_stats(rows):
+    hour_dict = {
+        0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0,
+        10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0, 17: 0, 18: 0,
+        19: 0, 20: 0, 21: 0, 22: 0, 23: 0, 24: 0
+    }
+    for row in rows:
+        full_time = row[1]
+        parsed_time = datetime.strptime(full_time, "%Y-%m-%d %H:%M:%S")
+        hour_dict[parsed_time.hour] += 1
+    for hour, hits in sorted(hour_dict.items(),
+                             key=itemgetter(1),
+                             reverse=True):
+        print "Hour %.2d has %d hits" % (hour, hits)
 
 
 def process_browser_stats(rows):
@@ -43,7 +65,7 @@ def process_image_stats(rows):
 
     for row in rows:
         path = row[0].lower()
-        if re.match(r'.*\.gif$', path) or re.match(r'.*\.jpg$', path) or re.match(r'.*\.png$', path):
+        if len(re.findall(r'jpg|png|gif', path)) > 0:
             image_hits += 1
         total_hits += 1
 
@@ -77,18 +99,21 @@ def download_csv_file(url):
 
 
 def main():
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", help="the URL from which the CSV file is downloaded")
+    parser.add_argument(
+        "--url", help="the URL from which the CSV file is downloaded")
     args = parser.parse_args()
 
     if args.url is None:
         print "No URL provided. Using default value."
-        args.url = "https://www.filepicker.io/api/file/YFOKLhneRCmM1l3Ggrak"
+        args.url = "http://s3.amazonaws.com/cuny-is211-spring2015/weblog.csv"
 
     download_csv_file(args.url)
     rows = read_csv_file()
     process_image_stats(rows)
     process_browser_stats(rows)
-
+    # extra credits
+    process_time_stats(rows)
 
 main()
